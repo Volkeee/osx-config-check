@@ -138,6 +138,73 @@
         undo: "sudo defaults write /Library/Preferences/com.apple.alf stealthenabled -bool false"
     },
     {
+        //System Preferences->Security & Privacy->Firewall->Firewall Options...->Automatically allow signed software to receive incoming connections
+        description: "Automatic whitelisting of Apple-signed applications through the firewall is disabled (system-wide)."
+        confidence: "required"
+        reference: "https://github.com/drduh/OS-X-Security-and-Privacy-Guide"
+        tests:
+        [
+            {
+                type: "exact match"
+                command: "defaults -currentHost read /Library/Preferences/com.apple.alf allowsignedenabled"
+                command_pass: "0"
+                command_fail: "1"
+                case_sensitive: "false"
+            }
+        ]
+        fix:
+        {
+            command: "defaults -currentHost write /Library/Preferences/com.apple.alf allowsignedenabled -bool false"
+            sudo_command: "sudo defaults -currentHost write /Library/Preferences/com.apple.alf allowsignedenabled -bool false"
+        }
+        undo: "sudo defaults -currentHost write /Library/Preferences/com.apple.alf allowsignedenabled -bool true"
+    },
+{
+        description: "Captive portal for connecting to new networks is disabled to prevent MITM attacks."
+        confidence: "required"
+        reference: "https://github.com/drduh/OS-X-Security-and-Privacy-Guide"
+        tests:
+        [
+            {
+                type: "exact match"
+                command: "defaults -currentHost read /Library/Preferences/SystemConfiguration/com.apple.captive.control Active"
+                command_pass: "0"
+                command_fail: "1"
+                case_sensitive: "false"
+            }
+        ]
+        fix:
+        {
+            command: "defaults -currentHost write /Library/Preferences/SystemConfiguration/com.apple.captive.control Active -bool false"
+            sudo_command: "sudo defaults -currentHost write /Library/Preferences/SystemConfiguration/com.apple.captive.control Active -bool false"
+        }
+        undo: "sudo defaults -currentHost write /Library/Preferences/SystemConfiguration/com.apple.captive.control Active -bool true"
+    },
+    {
+        description: "OpenSSL is up to date."
+        confidence: "required"
+        reference: "https://github.com/drduh/OS-X-Security-and-Privacy-Guide"
+        tests:
+        [
+            {
+                type: "exact match"
+                command: "openssl version"
+                command_pass: "OpenSSL 1.0.2h  3 May 2016"
+                case_sensitive: "false"
+            }
+        ]
+        fix:
+        {
+            command: "brew update ; brew install openssl ; brew upgrade openssl ; bash ./scripts/set_openssl_latest_path.sh"
+            manual:
+                '''
+                1. Bring the Terminal application to the foreground if it is not already. You should see the word "Terminal" in the top left corner of your screen.
+                2. Select Terminal->Quit
+                3. Re-open the Terminal application and run the tool again; this check should now pass.
+                '''
+        }
+    },
+    {
         description: "All application software is currently up to date."
         confidence: "required"
         reference: "https://github.com/SummitRoute/osxlockdown/"
@@ -156,6 +223,26 @@
         {
             command: "softwareupdate -i -a"
             sudo_command: "sudo softwareupdate -i -a"
+        }
+    },
+    {
+        //System Preferences: App Store: Automatically check for updates
+        description: "Automatic check for software updates is enabled."
+        confidence: "required"
+        reference: "https://github.com/SummitRoute/osxlockdown/"
+        tests:
+        [
+            {
+                type: "exact match"
+                command: "sudo softwareupdate --schedule | grep -i 'Automatic check is on'"
+                command_pass: "Automatic check is on"
+                case_sensitive: "false"
+            }
+        ]
+        fix:
+        {
+            command: "softwareupdate --schedule on"
+            sudo_command: "sudo softwareupdate --schedule on"
         }
     },
     {
@@ -179,6 +266,155 @@
         undo: "sudo spctl --master-disable"
     },
     {
+        //System Preferences->Bluetooth->Turn Bluetooth Off
+        description: "Bluetooth is disabled."
+        confidence: "experimental"
+        tests:
+        [
+            {
+                type: "exact match"
+                command: "defaults read /Library/Preferences/com.apple.Bluetooth ControllerPowerState"
+                command_pass: "0"
+                command_fail: "1"
+                case_sensitive: "false"
+            },
+            {
+                type: "exact match"
+                command: "sudo defaults read /Library/Preferences/com.apple.Bluetooth ControllerPowerState"
+                command_pass: "0"
+                command_fail: "1"
+                case_sensitive: "false"
+            }
+        ]
+        fix:
+        {
+            command: "defaults write /Library/Preferences/com.apple.Bluetooth ControllerPowerState -bool false; killall -HUP blued"
+            sudo_command: "sudo defaults write /Library/Preferences/com.apple.Bluetooth ControllerPowerState -bool false; sudo killall -HUP blued"
+        }
+        undo: "defaults write /Library/Preferences/com.apple.Bluetooth ControllerPowerState -bool true; killall -HUP blued"
+    },
+    {
+        description: "The infrared receiver is disabled."
+        confidence: "required"
+        tests:
+        [
+            {
+                type: "exact match"
+                command: "defaults read /Library/Preferences/com.apple.driver.AppleIRController DeviceEnabled"
+                command_pass: "0"
+                command_fail: "1"
+                case_sensitive: "false"
+            },
+            {
+                type: "exact match"
+                command: "sudo defaults read /Library/Preferences/com.apple.driver.AppleIRController DeviceEnabled"
+                command_pass: "0"
+                command_fail: "1"
+                case_sensitive: "false"
+            }
+        ]
+        fix:
+        {
+            command: "defaults write /Library/Preferences/com.apple.driver.AppleIRController DeviceEnabled -bool false"
+            sudo_command: "sudo defaults write /Library/Preferences/com.apple.driver.AppleIRController DeviceEnabled -bool false"
+        }
+        undo: "defaults write /Library/Preferences/com.apple.driver.AppleIRController DeviceEnabled -bool true"
+    },
+    {
+        description: "AirDrop file sharing is disabled."
+        confidence: "required"
+        tests:
+        [
+            {
+                type: "exact match"
+                command: "defaults read com.apple.NetworkBrowser DisableAirDrop"
+                command_pass: "1"
+                command_fail: "0"
+                case_sensitive: "false"
+            },
+            {
+                type: "exact match"
+                command: "sudo defaults read com.apple.NetworkBrowser DisableAirDrop"
+                command_pass: "1"
+                command_fail: "0"
+                case_sensitive: "false"
+            }
+        ]
+        fix:
+        {
+            command: "defaults_write_ignore_missing com.apple.NetworkBrowser DisableAirDrop -bool true"
+        }
+        undo: "defaults write com.apple.NetworkBrowser DisableAirDrop -bool false"
+    },
+    {
+        //System Preferences->Sharing->File Sharing
+        description: "File sharing is disabled."
+        confidence: "recommended"
+        reference: "https://github.com/SummitRoute/osxlockdown/blob/58697f5162fe9e43df7dc9b6b94ffa34b0e11d4f/commands.yaml"
+        tests:
+        [
+            {
+                type: "exact match"
+                command:
+                    if [ -n "$(launchctl list | egrep AppleFileServer)" ]; then exit 1; fi; if [ -n "$(grep -i array /Library/Preferences/SystemConfiguration/com.apple.smb.server.plist)" ]; then echo 1; exit; fi; echo 0; exit
+                command_pass: "0"
+                command_fail: "1"
+                case_sensitive: "false"
+            }
+        ]
+        fix:
+        {
+            command: "launchctl unload -w /System/Library/LaunchDaemons/com.apple.AppleFileServer.plist; launchctl unload -w /System/Library/LaunchDaemons/com.apple.smbd.plist"
+        }
+    },
+    {
+        //System Preferences->Sharing->Printer Sharing
+        description: "Printer sharing is disabled."
+        confidence: "required"
+        reference: "https://github.com/SummitRoute/osxlockdown/blob/58697f5162fe9e43df7dc9b6b94ffa34b0e11d4f/commands.yaml"
+        tests:
+        [
+            {
+                type: "exact match"
+                command:
+                    if [ -n "$(system_profiler SPPrintersDataType | grep Shared | grep Yes)" ]; then echo 1; exit; fi; if [ -n "$(system_profiler SPPrintersDataType | grep 'System Printer Sharing: Yes')" ]; then echo 1; exit; fi; echo 0; exit
+                command_pass: "0"
+                command_fail: "1"
+                case_sensitive: "false"
+            }
+        ]
+        fix:
+        {
+            command: "cupsctl --no-share-printers"
+        }
+    },
+    {
+        //System Preferences->Sharing->Remote Login
+        description: "Remote login is disabled."
+        confidence: "required"
+        tests:
+        [
+            {
+                type: "exact match"
+                command: "systemsetup -getremotelogin"
+                command_pass: "Remote Login: Off"
+                case_sensitive: "false"
+            },
+            {
+                type: "exact match"
+                command: "sudo systemsetup -getremotelogin"
+                command_pass: "Remote Login: Off"
+                case_sensitive: "false"
+            }
+        ]
+        fix:
+        {
+            command: "systemsetup -f -setremotelogin off"
+            sudo_command: "sudo systemsetup -f -setremotelogin off"
+        }
+        undo: "sudo systemsetup -f -setremotelogin on"
+    },
+    {
         //System Preferences->Sharing->Remote Management
         description: "Remote Management is disabled."
         confidence: "required"
@@ -200,6 +436,97 @@
         }
     },
     {
+        //System Preferences->Sharing->Internet Sharing
+        description: "Internet Sharing is disabled on all network interfaces."
+        confidence: "required"
+        reference: "https://github.com/SummitRoute/osxlockdown/blob/58697f5162fe9e43df7dc9b6b94ffa34b0e11d4f/commands.yaml"
+        tests:
+        [
+            {
+                type: "exact match"
+                command: "defaults read /Library/Preferences/SystemConfiguration/com.apple.nat NAT | grep -c 'Enabled = 1'"
+                command_pass: "0"
+                case_sensitive: "false"
+            }
+        ]
+        fix:
+        {
+            command: "defaults write /Library/Preferences/SystemConfiguration/com.apple.nat NAT -dict-add Enabled -bool false"
+            sudo_command: "sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.nat NAT -dict-add Enabled -bool false"
+        }
+    },
+    {
+        //System Preferences->Energy Saver->Wake for network access
+        description: "Wake on Network Access feature is disabled."
+        confidence: "required"
+        tests:
+        [
+            {
+                type: "exact match"
+                command: "systemsetup getwakeonnetworkaccess"
+                command_pass: "Wake On Network Access: Off"
+                case_sensitive: "false"
+            },
+            {
+                type: "exact match"
+                command: "sudo systemsetup getwakeonnetworkaccess"
+                command_pass: "Wake On Network Access: Off"
+                case_sensitive: "false"
+            }
+        ]
+        fix:
+        {
+            command: "systemsetup -setwakeonnetworkaccess off"
+            sudo_command: "sudo systemsetup -setwakeonnetworkaccess off"
+        }
+        undo: "sudo systemsetup -setwakeonnetworkaccess on"
+    },
+    {
+        //There are a number of attacks based on IPv6 use. For the sake of simplicity, it's best to disable it entirely unless it is required. See: https://www.ernw.de/download/ERNW_Hardening_IPv6_MacOS-X_v1_0.pdf
+        description: "IPv6 is disabled on all network interfaces."
+        confidence: "recommended"
+        reference: "https://github.com/SummitRoute/osxlockdown/blob/58697f5162fe9e43df7dc9b6b94ffa34b0e11d4f/commands.yaml"
+        tests:
+        [
+            {
+                type: "exact match"
+                command:
+                    networksetup -listallnetworkservices | while read i; do SUPPORT=$(networksetup -getinfo "$i" | grep "IPv6: Automatic") && if [ -n "$SUPPORT" ]; then echo 1; fi; done; echo 0; exit
+                command_pass: "0"
+                //command_fail would be one or more instances of the character "1"
+                case_sensitive: "false"
+            }
+        ]
+        fix:
+        {
+            command:
+                networksetup -listallnetworkservices | while read i; do SUPPORT=$(networksetup -getinfo "$i" | grep "IPv6: Automatic") && if [ -n "$SUPPORT" ]; then networksetup -setv6off "$i"; fi; done;
+        }
+    },
+    {
+        description: "An administrator password is required to change system-wide preferences."
+        confidence: "required"
+        reference: "https://github.com/SummitRoute/osxlockdown/blob/58697f5162fe9e43df7dc9b6b94ffa34b0e11d4f/commands.yaml"
+        tests:
+        [
+            {
+                type: "exact match"
+                command:
+                    if [ -n "$(security authorizationdb read system.preferences 2> /dev/null | grep -A1 shared | grep -E '(true|false)' | grep 'false')" ]; then echo 0; else echo 1; fi
+                command_pass: "0"
+                command_fail: "1"
+                case_sensitive: "false"
+            }
+        ]
+        fix:
+        {
+            //TODO: Add warning to user before fix command is run that she will be prompted for her admin credentials. this requires a new field
+            command:
+                security authorizationdb read system.preferences > /tmp/system.preferences.plist &&/usr/libexec/PlistBuddy -c "Set :shared false" /tmp/system.preferences.plist && security authorizationdb write system.preferences < /tmp/system.preferences.plist
+        }
+    },
+
+   {
         description: "The File Vault key is protected when going to standby mode."
         //Once this set of configurations is proven stable, this can be upgraded from "experimental" to "recommended". We may want to warn the user first that waking will be slower and require authenticating twice.
         confidence: "experimental"
@@ -222,7 +549,7 @@
         }
     },
     {
-        description: "Google DNS servers are used by default on all network interfaces."
+        description: "Secured DNS servers are used by default on all network interfaces."
         confidence: "recommended"
         tests:
         [
@@ -293,9 +620,103 @@
             command:
                 UUID=`ioreg -rd1 -c IOPlatformExpertDevice | grep "IOPlatformUUID" | sed -e 's/^.*"\(.*\)"$/\1/'`; for i in $(find /Users -type d -maxdepth 1); do PREF=$i/Library/Preferences/ByHost/com.apple.screensaver.$UUID; if [ -e $PREF.plist ]; then defaults -currentHost write $PREF.plist idleTime -int 600; fi; done
         }
+    }
+    {
+        //Check if the Safari app is closed -- otherwise, it may override changes this app makes.
+        description: "The Safari application is currently closed."
+        confidence: "required"
+        reference: "https://developer.apple.com/legacy/library/documentation/Darwin/Reference/ManPages/man1/defaults.1.html"
+        tests:
+        [
+            {
+                type: "exact match"
+                command: "ps ax | grep -c '/Applications/Safari.app/Contents/MacOS/Safari'"
+                command_pass: "2" //a value of "3" means it's running -- the other 2 are `/bin/sh` and the `grep` command.
+                case_sensitive: "false"
+            }
+        ]
+        fix:
+        {
+            command:
+                killall "Safari" ; sleep 1
+        }
     },
-        /* ---BEGIN SAFARI BROWSER SETTINGS--- */
-
+    {
+        //Safari->Preferences->AutoFill->Credit cards
+        description: "Safari will not auto-fill credit card data."
+        confidence: "recommended"
+        tests:
+        [
+            {
+                type: "exact match"
+                command: "defaults -currentHost read ~/Library/Preferences/com.apple.Safari AutoFillCreditCardData"
+                command_pass: "0"
+                command_fail: "1"
+                case_sensitive: "false"
+            }
+        ]
+        fix:
+        {
+            command: "defaults -currentHost write ~/Library/Preferences/com.apple.Safari AutoFillCreditCardData -bool false"
+        }
+    },
+    {
+        //Safari->Preferences->AutoFill->Using info from my Contacts card
+        description: "Safari will not auto-fill your contact data."
+        confidence: "recommended"
+        tests:
+        [
+            {
+                type: "exact match"
+                command: "defaults -currentHost read ~/Library/Preferences/com.apple.Safari AutoFillFromAddressBook"
+                command_pass: "0"
+                command_fail: "1"
+                case_sensitive: "false"
+            }
+        ]
+        fix:
+        {
+            command: "defaults -currentHost write ~/Library/Preferences/com.apple.Safari AutoFillFromAddressBook -bool false"
+        }
+    },
+    {
+        //Safari->Preferences->AutoFill->Other forms
+        description: "Safari will not auto-fill miscellaneous forms."
+        confidence: "recommended"
+        tests:
+        [
+            {
+                type: "exact match"
+                command: "defaults -currentHost read ~/Library/Preferences/com.apple.Safari AutoFillMiscellaneousForms"
+                command_pass: "0"
+                command_fail: "1"
+                case_sensitive: "false"
+            }
+        ]
+        fix:
+        {
+            command: "defaults -currentHost write ~/Library/Preferences/com.apple.Safari AutoFillMiscellaneousForms -bool false"
+        }
+    },
+    {
+        //Safari->Preferences->AutoFill->User names and passwords
+        description: "Safari will not auto-fill usernames or passwords."
+        confidence: "recommended"
+        tests:
+        [
+            {
+                type: "exact match"
+                command: "defaults -currentHost read ~/Library/Preferences/com.apple.Safari AutoFillPasswords"
+                command_pass: "0"
+                command_fail: "1"
+                case_sensitive: "false"
+            }
+        ]
+        fix:
+        {
+            command: "defaults -currentHost write ~/Library/Preferences/com.apple.Safari AutoFillPasswords -bool false"
+        }
+    },
     {
         //Safari->Preferences->General->Open "safe" files after downloading
         description: "Files downloaded in Safari are not automatically opened."
@@ -313,6 +734,26 @@
         fix:
         {
             command: "defaults -currentHost write ~/Library/Preferences/com.apple.Safari AutoOpenSafeDownloads -bool false"
+        }
+    },
+    {
+        //Safari->Develop->Disable Extensions
+        //Note: Extensions are often a persistence mechanism for browser-based malware.
+        description: "Safari extensions are disabled."
+        confidence: "required"
+        tests:
+        [
+            {
+                type: "exact match"
+                command: "defaults -currentHost read ~/Library/Preferences/com.apple.Safari ExtensionsEnabled"
+                command_pass: "0"
+                command_fail: "1"
+                case_sensitive: "false"
+            }
+        ]
+        fix:
+        {
+            command: "defaults -currentHost write ~/Library/Preferences/com.apple.Safari ExtensionsEnabled -bool false"
         }
     },
     {
@@ -377,25 +818,24 @@
         undo: "defaults -currentHost write ~/Library/Preferences/com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaScriptCanOpenWindowsAutomatically -bool true"
     },
     {
-        //Safari->Preferences->Advanced->Smart Search Field->Show full website address
-        //This might help prevent phishing attacks
-        description: "Full website addresses are displayed in the location bar of the Safari web browser."
+        //Safari->Preferences->Security->Web Content->Block pop-up windows
+        description: "Pop-up windows are blocked in the Safari web browser (Legacy version)."
         confidence: "required"
         tests:
         [
             {
                 type: "exact match"
-                command: "defaults -currentHost read ~/Library/Preferences/com.apple.Safari ShowFullURLInSmartSearchField"
-                command_pass: "1"
-                command_fail: "0"
+                command: "defaults -currentHost read ~/Library/Preferences/com.apple.Safari WebKitJavaScriptCanOpenWindowsAutomatically"
+                command_pass: "0"
+                command_fail: "1"
                 case_sensitive: "false"
             }
         ]
         fix:
         {
-            command: "defaults -currentHost write ~/Library/Preferences/com.apple.Safari ShowFullURLInSmartSearchField -bool true"
+            command: "defaults -currentHost write ~/Library/Preferences/com.apple.Safari WebKitJavaScriptCanOpenWindowsAutomatically -bool false"
         }
-        undo: defaults -currentHost write ~/Library/Preferences/com.apple.Safari ShowFullURLInSmartSearchField -bool false"
+        undo: "defaults -currentHost write ~/Library/Preferences/com.apple.Safari WebKitJavaScriptCanOpenWindowsAutomatically -bool true"
     },
     {
         //Safari->Preferences->Privacy->Website tracking->Ask websites not to track me
@@ -417,32 +857,164 @@
         }
         undo: "defaults -currentHost write ~/Library/Preferences/com.apple.Safari SendDoNotTrackHTTPHeader -bool false"
     },
-
-    /* ----END SAFARI BROWSER SETTINGS---- */
-
-
-   {
-        description: "OpenSSL is up to date."
+    {
+        //Safari->Preferences->Advanced->Smart Search Field->Show full website address
+        //This might help prevent phishing attacks
+        description: "Full website addresses are displayed in the location bar of the Safari web browser."
         confidence: "required"
-        reference: "https://github.com/drduh/OS-X-Security-and-Privacy-Guide"
         tests:
         [
             {
                 type: "exact match"
-                command: "openssl version"
-                command_pass: "OpenSSL 1.0.2h  3 May 2016"
+                command: "defaults -currentHost read ~/Library/Preferences/com.apple.Safari ShowFullURLInSmartSearchField"
+                command_pass: "1"
+                command_fail: "0"
                 case_sensitive: "false"
             }
         ]
         fix:
         {
-            command: "brew update ; brew install openssl ; brew upgrade openssl ; bash ./scripts/set_openssl_latest_path.sh"
+            command: "defaults -currentHost write ~/Library/Preferences/com.apple.Safari ShowFullURLInSmartSearchField -bool true"
+        }
+        undo: defaults -currentHost write ~/Library/Preferences/com.apple.Safari ShowFullURLInSmartSearchField -bool false"
+    },
+    {
+        //Check if the Mail app is closed -- otherwise, it may override changes this app makes.
+        description: "The Mail application is currently closed."
+        confidence: required
+        reference: "https://developer.apple.com/legacy/library/documentation/Darwin/Reference/ManPages/man1/defaults.1.html"
+        tests:
+        [
+            {
+                type: "exact match"
+                command: "ps ax | grep -c '/Applications/Mail.app/Contents/MacOS/Mail'"
+                command_pass: 2 //a value of "3" means it's running -- the other 2 are `/bin/sh` and the `grep` command.
+                case_sensitive: false
+            }
+        ]
+        fix:
+        {
+            command:
+                killall "Mail" ; sleep 1
+        }
+    },
+    {
+        //Mail->Preferences->Viewing->Load remote content in messages
+        description: "Apple Mail does not automatically load remote content in e-mails."
+        confidence: recommended
+        tests:
+        [
+            {
+                //If Apple Mail is not in use by the user, this test passes
+                type: "exact match"
+                command: apple_mail_in_use
+                command_pass: 0
+                case_sensitive: false
+            }
+            {
+                type: "exact match"
+                command: "defaults read ~/Library/Preferences/com.apple.mail-shared DisableURLLoading"
+                command_pass: 1
+                command_fail: 0
+                case_sensitive: false
+            }
+        ]
+        fix:
+        {
+            command: "defaults write ~/Library/Preferences/com.apple.mail-shared DisableURLLoading -bool true"
+        }
+        undo: "defaults write ~/Library/Preferences/com.apple.mail-shared DisableURLLoading -bool false"
+    },
+    {
+        //Mail->Preferences->Junk Mail->Enable junk mail filtering AND When junk mail arrives: Move it to the Junk mailbox
+        description: "Mail identified by Apple Mail as junk is sent to the Junk mailbox."
+        confidence: recommended
+        tests:
+        [
+            {
+                //If Apple Mail is not in use by the user, this test passes
+                type: "exact match"
+                command: apple_mail_in_use
+                command_pass: 0
+                case_sensitive: false
+            }
+            {
+                type: "exact match"
+                command: "defaults -currentHost read ~/Library/Containers/com.apple.mail/Data/Library/Preferences/com.apple.mail JunkMailBehavior"
+                command_pass: 2
+                case_sensitive: false
+            }
+        ]
+        fix:
+        {
+            command: "defaults -currentHost write ~/Library/Containers/com.apple.mail/Data/Library/Preferences/com.apple.mail JunkMailBehavior -int 2"
+        }
+    },
+    {
+        description: "Malware is not present."
+        confidence: "required"
+        reference: "http://www.welivesecurity.com/2016/08/30/osxkeydnap-spreads-via-signed-transmission-application/"
+        tests:
+        [
+            {
+                type: "exact match"
+                command:
+                    if [ -e "/Applications/Transmission.app/Contents/Resources/License.rtf" ] ; then echo 1 ; else echo 0 ; fi
+                command_fail: 1
+                case_sensitive: false
+            }
+            {
+                type: "exact match"
+                command:
+                    if [ -e "/Volumes/Transmission/Transmission.app/Contents/Resources/License.rtf" ] ; then echo 1 ; else echo 0 ; fi
+                command_fail: 1
+                case_sensitive: false
+            }
+            {
+                type: "exact match"
+                command:
+                    if [ -e "$HOME/Library/Application Support/com.apple.iCloud.sync.daemon/icloudsyncd" ] ; then echo 1 ; else echo 0 ; fi
+                command_fail: 1
+                case_sensitive: false
+            }
+            {
+                type: "exact match"
+                command:
+                    if [ -e "$HOME/Library/Application Support/com.apple.iCloud.sync.daemon/process.id" ] ; then echo 1 ; else echo 0 ; fi
+                command_fail: 1
+                case_sensitive: false
+            }
+            {
+                type: "exact match"
+                command:
+                    if [ -e "$HOME/Library/LaunchAgents/com.apple.iCloud.sync.daemon.plist" ] ; then echo 1 ; else echo 0 ; fi
+                command_fail: 1
+                case_sensitive: false
+            }
+            {
+                type: "exact match"
+                command:
+                    if [ -e "/Library/Application Support/com.apple.iCloud.sync.daemon/" ] ; then echo 1 ; else echo 0 ; fi
+                command_fail: 1
+                case_sensitive: false
+            }
+            {
+                type: "exact match"
+                command:
+                    if [ -e "/Library/Application Support/com.apple.iCloud.sync.daemon/" ] ; then echo 1 ; else echo 0 ; fi
+                command_pass: 0
+                command_fail: 1
+                case_sensitive: false
+            }
+        ]
+        fix:
+        {
             manual:
                 '''
-                1. Bring the Terminal application to the foreground if it is not already. You should see the word "Terminal" in the top left corner of your screen.
-                2. Select Terminal->Quit
-                3. Re-open the Terminal application and run the tool again; this check should now pass.
+                1. One or more of the files associated with the OSX/Keydnap malware was found. Please report this to the authors of osx-config-check via GitHub (https://github.com/kristovatlas/osx-config-check) or Twitter (https://twitter.com/kristovatlas).
+                2. Refer to this link: http://www.welivesecurity.com/2016/08/30/osxkeydnap-spreads-via-signed-transmission-application/
                 '''
         }
     }
+
 ]
