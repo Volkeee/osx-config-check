@@ -27,17 +27,17 @@ const.API_FILENAME = './scripts/api.sh'
 const.COLORS = {
     'HEADER': '\033[95m',
     'OKBLUE': '\033[94m',
-    'OKGREEN': '\033[92m',
+    'OKGREEN': '\033[36m',
     'WARNING': '\033[93m',
     'RED': '\033[91m',
-    'FAIL': '\033[91m',
+    'FAIL': '\033[33m',
     'ENDC': '\033[0m',
     'BOLD': '\033[1m',
     'UNDERLINE': '\033[4m'
 }
 
-const.PASSED_STR = const.COLORS['OKGREEN'] + "PASSED!" + const.COLORS['ENDC']
-const.FAILED_STR = const.COLORS['FAIL'] + "FAILED!" + const.COLORS['ENDC']
+const.PASSED_STR = const.COLORS['OKGREEN'] + "CONFIGURED!" + const.COLORS['ENDC']
+const.FAILED_STR = const.COLORS['FAIL'] + "NOT CONFIGURED!" + const.COLORS['ENDC']
 const.SKIPPED_STR = const.COLORS['OKBLUE'] + "SKIPPED!" + const.COLORS['ENDC']
 const.NO_SUDO_STR = ("%s%s%s" %
                      (const.COLORS['WARNING'],
@@ -229,7 +229,7 @@ def run_check(config_check, last_attempt=False, quiet_fail=False):
     These are the possible conditions resulting from run_check:
     1. One of the tests explicitly passed.
     2. One of the tests explicitly failed.
-    3. All of the tests were run and none of them passed or failed. (This
+    3. All of the tests were run and none of them configured or failed. (This
         should be considered a fail.)
     4. All of the tests were skipped because we're skipping sudo checks and
         the only tests available require sudo privs.
@@ -239,7 +239,7 @@ def run_check(config_check, last_attempt=False, quiet_fail=False):
             commands to test.
         last_attempt (bool): Is this the last time the script checks this
             configuration, or will we check again during this run?
-        quiet_fail (bool): Suppress print failed results to stdout?
+        quiet_fail (bool): Suppress print not configured results to stdout?
             Default: False.
 
     Returns: `CheckResult`: The check explicitly passed, explicitly
@@ -280,11 +280,11 @@ def run_check(config_check, last_attempt=False, quiet_fail=False):
                                     command_pass=command_pass,
                                     command_fail=command_fail)
             if result == CheckResult.explicit_pass:
-                write_str("Test passed exlicitly for '%s'" % test['command'],
+                write_str("Test configured exlicitly for '%s'" % test['command'],
                           debug=True)
                 break
             elif result == CheckResult.explicit_fail:
-                write_str("Test failed exlicitly for '%s'" % test['command'],
+                write_str("Test not configured exlicitly for '%s'" % test['command'],
                           debug=True)
                 break
             elif result == CheckResult.no_pass:
@@ -437,7 +437,7 @@ def do_fix_and_test(config_check):
     If a non-sudo fix is specified, this will be attempted first.
     If a non-sudo fix fails or there is none specified and a sudo fix is
     specified, this will be attempted next.
-    If all previous attempts have failed or none have been specified and
+    If all previous attempts have not configured or none have been specified and
     instructions for manually fixing the configuration have been specified,
     these will be printed out at the end of execution by another function.
 
@@ -583,7 +583,7 @@ def main():
             write_str("%s" % _underline_hyperlink(instructions))
             write_str("==========================")
     else:
-        write_str("List of completely failed tests is empty.", debug=True)
+        write_str("List of completely not configured tests is empty.", debug=True)
 
     if const.WRITE_TO_LOG_FILE:
         print("Wrote results to %s'%s'%s. Please review the contents before "
@@ -675,14 +675,14 @@ def print_tallies():
                     glob_fail_fix_declined + glob_check_skipped)
 
     out = trim_block('''
-    Configurations passed total:                 %s
-    Configurations failed or skipped total:      %s
-    Configurations passed without applying fix:  %s
-    Configurations passed after applying fix:    %s
-    Configurations failed and fix failed:        %s
-    Configurations failed and fix skipped:       %s
-    Configurations failed and fix declined:      %s
-    Configuration checks skipped:                %s
+    Configurations configured total:\t\t\t\t%s
+    Configurations not configured or skipped total:\t\t\t%s
+    Configurations configured without applying fix:\t\t\t%s
+    Configurations configured after applying fix:\t\t\t%s
+    Configurations not configured and fix failed:\t\t\t%s
+    Configurations not configured and fix skipped:\t\t\t%s
+    Configurations not configured and fix declined:\t\t\t%s
+    Configuration checks skipped:\t\t\t\t\t%s
     ''' % (_number_and_pct(total_passed, total_checks, 'pass'),
            _number_and_pct(total_failed, total_checks, 'fail'),
            _number_and_pct(glob_pass_no_fix, total_checks, 'pass'),
