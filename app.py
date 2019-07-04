@@ -489,7 +489,7 @@ def main():
 
     dprint_settings()
 
-    _print_banner()
+    # _print_banner()
 
     config_checks = read_config(const.DEFAULT_CONFIG_FILE)
     completely_failed_tests = []
